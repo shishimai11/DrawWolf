@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Draw Wolf Ver.0.6</title>
+
+<style>
+
+body{
+font-family:sans-serif;
+text-align:center;
+background:linear-gradient(135deg,#020617,#1e293b);
+color:white;
+padding:20px;
+}
+
+h1{
+font-size:42px;
+}
+
+.box{
+background:white;
+color:black;
+padding:25px;
+border-radius:25px;
+margin:20px auto;
+max-width:430px;
+box-shadow:0 0 20px #0008;
+}
+
+
+button{
+font-size:20px;
+padding:15px 25px;
+border-radius:20px;
+border:none;
+margin:10px;
+background:#2563eb;
+color:white;
+cursor:pointer;
+}
+
+
+button:hover{
+transform:scale(1.05);
+}
+
+
+input,select{
+font-size:20px;
+padding:10px;
+border-radius:10px;
+}
+
+
+.info{
+font-size:22px;
+font-weight:bold;
+}
+
+
+.card{
+
+font-size:30px;
+font-weight:bold;
+
+}
+
+
+.vote button{
+
+display:block;
+width:85%;
+margin:10px auto;
+
+}
+
+
+.selected{
+
+background:#dc2626;
+
+}
+
+
+.small{
+
+font-size:18px;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<h1>🐺 Draw Wolf</h1>
+
+
+
+<div class="box" id="setting">
+
+<h2>🎮 ゲーム設定</h2>
+
+
+<p>人数</p>
+
+<input id="players" type="number" value="5" min="3" max="10">
+
+
+<p>狼の人数</p>
+
+<input id="wolves" type="number" value="1" min="1" max="3">
+
+
+<p>難易度</p>
+
+<select id="level">
+
+<option value="easy">⭐普通</option>
+
+<option value="hard">⭐⭐難しい</option>
+
+<option value="wolf">⭐⭐⭐鬼</option>
+
+</select>
+
+
+<br>
+
+
+<button onclick="startGame()">
+🔥 ゲーム開始
+</button>
+
+
+</div>
+
+
+
+
+<div class="box" id="game" style="display:none;">
+
+
+<h2 id="player">
+👤 1番目の人
+</h2>
+
+
+<p id="progress" class="info">
+
+確認 1 / 5
+
+</p>
+
+
+
+<button onclick="showTopic()">
+👁️ お題を見る
+</button>
+
+
+<div id="topic" class="box" style="display:none;">
+
+</div>
+
+
+<button onclick="hideTopic()">
+🙈 隠す
+</button>
+
+
+<br>
+
+
+<button onclick="nextPlayer()">
+➡️ 次の人へ
+</button>
+
+
+</div>
+
+
+
+
+
+<div class="box" id="vote" style="display:none;">
+
+
+<h2>🗳️ 投票</h2>
+
+
+<p id="voteText">
+
+狼だと思う人を選んでください
+
+</p>
+
+
+<div id="voteArea" class="vote">
+
+</div>
+
+
+<button onclick="finishVote()">
+
+✅ 投票決定
+
+</button>
+
+
+</div>
+
+
+
+
+
+<div class="box" id="result" style="display:none;">
+
+
+<h1 id="resultText"></h1>
+
+
+<p id="answer"></p>
+
+
+<button onclick="restart()">
+
+🔄 もう一回
+
+</button>
+
+
+</div><script>
+
+let playerCount;
+let wolfCount;
+
+let nowPlayer = 1;
+
+let wolfPlayers = [];
+
+let citizenTopic;
+let wolfTopic;
+
+let selectedVotes = [];
+
+
+// お題
+
+let topics = [
+
+["修学旅行🚌","林間学校🌲"],
+["体育祭🏃","文化祭🎭"],
+["遊園地🎢","水族館🐬"],
+["東京タワー🗼","スカイツリー🏙️"],
+["海水浴🏖️","プール🏊"],
+["映画館🎬","カラオケ🎤"],
+["キャンプ⛺","バーベキュー🍖"],
+["ホテル🏨","旅館🏯"],
+["初詣⛩️","花火大会🎆"]
+
+];
+
+
+let hardTopics = [
+
+["ディズニーランド🏰","USJ🎢"],
+["卒業式🎓","入学式🌸"],
+["駅🚉","空港✈️"],
+["図書館📚","本屋📖"],
+["温泉♨️","銭湯🛁"]
+
+];
+
+
+let wolfTopics = [
+
+["宇宙旅行🚀","深海探検🌊"],
+["オリンピック🏅","世界大会🌎"],
+["海外旅行🌏","国内旅行🗾"]
+
+];
+
+
+
+
+function startGame(){
+
+
+playerCount =
+Number(document.getElementById("players").value);
+
+
+wolfCount =
+Number(document.getElementById("wolves").value);
+
+
+
+let level =
+document.getElementById("level").value;
+
+
+
+let list = topics;
+
+
+if(level=="hard"){
+
+list=hardTopics;
+
+}
+
+if(level=="wolf"){
+
+list=wolfTopics;
+
+}
+
+
+
+let pair =
+list[Math.floor(Math.random()*list.length)];
+
+
+citizenTopic=pair[0];
+
+wolfTopic=pair[1];
+
+
+
+wolfPlayers=[];
+
+
+
+while(wolfPlayers.length<wolfCount){
+
+
+let n=Math.floor(Math.random()*playerCount)+1;
+
+
+if(!wolfPlayers.includes(n)){
+
+wolfPlayers.push(n);
+
+}
+
+}
+
+
+
+nowPlayer=1;
+
+
+document.getElementById("setting").style.display="none";
+
+document.getElementById("game").style.display="block";
+
+
+updatePlayer();
+
+}
+
+
+
+
+
+function updatePlayer(){
+
+
+document.getElementById("player").innerHTML=
+
+"👤 "+nowPlayer+"番目の人";
+
+
+document.getElementById("progress").innerHTML=
+
+"確認 "+nowPlayer+" / "+playerCount;
+
+
+}
+
+
+
+
+function showTopic(){
+
+
+let topic;
+
+
+if(wolfPlayers.includes(nowPlayer)){
+
+
+topic=wolfTopic;
+
+
+}else{
+
+
+topic=citizenTopic;
+
+
+}
+
+
+
+document.getElementById("topic").style.display="block";
+
+
+document.getElementById("topic").innerHTML=
+
+`
+<div class="card">
+あなたのお題<br><br>
+${topic}
+</div>
+`;
+
+}
+
+
+
+
+
+function hideTopic(){
+
+document.getElementById("topic").style.display="none";
+
+}
+
+
+
+
+
+function nextPlayer(){
+
+
+nowPlayer++;
+
+
+hideTopic();
+
+
+
+if(nowPlayer<=playerCount){
+
+
+updatePlayer();
+
+
+}else{
+
+
+document.getElementById("game").style.display="none";
+
+
+showVote();
+
+
+}
+
+
+}
+
+
+
+
+function showVote(){
+
+
+document.getElementById("vote").style.display="block";
+
+
+let area=document.getElementById("voteArea");
+
+
+area.innerHTML="";
+
+
+selectedVotes=[];
+
+
+
+for(let i=1;i<=playerCount;i++){
+
+
+let btn=document.createElement("button");
+
+
+btn.innerHTML=i+"番";
+
+
+btn.onclick=function(){
+
+
+selectVote(i,btn);
+
+
+};
+
+
+area.appendChild(btn);
+
+
+}
+
+
+}
+
+
+
+
+function selectVote(num,btn){
+
+
+if(selectedVotes.includes(num)){
+
+
+selectedVotes =
+selectedVotes.filter(x=>x!=num);
+
+
+btn.classList.remove("selected");
+
+
+}else{
+
+
+selectedVotes.push(num);
+
+
+btn.classList.add("selected");
+
+
+}
+
+
+}
+
+
+
+
+
+function finishVote(){
+
+
+let win=true;
+
+
+
+// 狼全員が選ばれているか確認
+
+for(let wolf of wolfPlayers){
+
+
+if(!selectedVotes.includes(wolf)){
+
+
+win=false;
+
+}
+
+
+}
+
+
+
+// 市民が余計に選んでもOKかチェック
+
+if(selectedVotes.length != wolfPlayers.length){
+
+
+win=false;
+
+}
+
+
+
+
+document.getElementById("vote").style.display="none";
+
+document.getElementById("result").style.display="block";
+
+
+
+if(win){
+
+
+document.getElementById("resultText").innerHTML=
+
+"🎉 市民チーム勝利！";
+
+
+}else{
+
+
+document.getElementById("resultText").innerHTML=
+
+"🐺 狼チーム勝利！";
+
+
+}
+
+
+
+document.getElementById("answer").innerHTML=
+
+"正解の狼："+wolfPlayers.join("番・")+"番";
+
+
+
+}
+
+
+
+
+
+function restart(){
+
+location.reload();
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
